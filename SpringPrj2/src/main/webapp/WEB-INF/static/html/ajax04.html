@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" href="/css/common.css">
+<link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+<style>
+	table{margin-top: 30px;}
+</style>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+	function header() {
+		let header='';
+		header+='<tr>			';
+		header+='	<th>아이디</th>';
+		header+='	<th>이름</th>';
+		header+='	<th>가입일</th>';
+		header+='</tr>';
+		return header;
+	}
+	function getUserAll() {
+		let url='/Board';
+		let html='';
+		//$.ajax와 같은 기능
+		$.getJSON(url,function (datalist) {
+			html+='<table>			';
+			html+=header();
+			$.each(datalist,function (index,item) {
+				html+='	<tr>';
+				html+='		<td>'+item.userid+'</td>';
+				html+='		<td>'+item.username+'</td>';
+				html+='		<td>'+item.indate+'</td>';
+				html+='	</tr>';
+				
+			})
+			html+='</table>';
+			$('#div1').html(html);
+
+		})
+	}
+	function getUserByName() {
+		// like % 검색
+		let html='';
+		$.ajax({
+			url:'/Board',
+			data:{name:$('#text').val()},
+			method:'POST',
+			success:function (datalist) {
+				console.log(datalist);
+				html+='<table>			';
+				html+=header();
+				$.each(datalist,function (index,item) {
+					html+='	<tr>';
+					html+='		<td>'+item.userid+'</td>';
+					html+='		<td>'+item.username+'</td>';
+					html+='		<td>'+item.indate+'</td>';
+					html+='	</tr>';
+					
+				})
+				html+='</table>';
+				$('#div1').html(html);
+			},
+			error:function(error){
+				console.log(error);
+				alert('error :'+error);
+			}
+		})
+	}
+	function getUserById() {
+		let html='';
+		$.ajax({
+			url:'/Board/'+$('#text').val(),
+			method:'GET',
+			success:function(UserVo){
+				console.log(UserVo);
+				html+='<table>';
+				html+='	<tr>';
+				html+='		<td>아이디</td>';
+				html+='		<td>'+UserVo.userid+'</td>';
+				html+='	</tr>';
+				html+='		<td>암호</td>';
+				html+='		<td>'+UserVo.passwd+'</td>';
+				html+='	</tr>';
+				html+='	<tr>';
+				html+='		<td>이름</td>';
+				html+='		<td>'+UserVo.username+'</td>';
+				html+='	</tr>';
+				html+='	<tr>';
+				html+='		<td>가입일</td>';
+				html+='		<td>'+UserVo.indate+'</td>';
+				html+='	</tr>';
+				$('#div1').html(html);
+			},
+			error:function(error){
+				console.log(error);
+				alert('error :'+error);
+			}
+
+		})
+		
+	}
+	$(function () {
+		$('#btnFind').on('click',function () {
+			const search=$('#search option:selected').val();
+			switch (search) {
+				case 'all':
+					getUserAll();
+					break;
+				case 'name':
+					getUserByName();
+					break;
+				case 'id':
+					getUserById();
+					break;
+			
+				default:
+					break;
+			}
+		})
+	})
+</script>
+</head>
+<body>
+	<div id="main">
+		<h2>회원 정보 조회</h2>
+		<select name="" id="search">
+			<option value="all">전체</option>
+			<option value="name">이름</option>
+			<option value="id">아이디</option>
+		</select>
+		<input type="text" id="text" placeholder="검색어">
+		<button id="btnFind">조회</button>
+		<div id="div1"></div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+	
+	
+	<mapper namespace="Board">
+	
+	
+		
+	    
+	
+	    <select id="listAll" resultType="com.green.board.vo.BoardVo">
+	   	<include refid="pagingHeader"></include>
+		  SELECT
+	        ROW_NUMBER() OVER (ORDER BY Q.QSEQ DESC ) AS RN,
+	                <!-- Q.TITLE,
+					Q.LVL, 
+					Q.QSEQ,
+			        Q.WRITEDATE,
+			        Q.MENU_ID,
+	                Q.CONT,
+			        Q.NREF,
+			        Q.STEP,
+	                T.NICKNAME,
+	                T.2,
+			        Q.BNUM
+					FROM QUEST_BOARD Q, 
+	            	TUSERS T  
+	        		WHERE T.EMAIL = Q.EMAIL(+)
+	        		AND Q.MENU_ID = 'MENU01'   --> 
+	        		Q.TITLE, 
+			        Q.QSEQ,
+			        Q.CONT,
+			        T.EMAIL,
+			        Q.BNUM,
+			        Q.WRITEDATE,
+			        Q.MENU_ID,
+			        T.NICKNAME
+			 		FROM QUEST_BOARD Q, 
+	            	TUSERS T
+	            	WHERE T.EMAIL = Q.EMAIL(+)  
+			 		AND Q.MENU_ID = 'MENU01'
+			<include refid="search"></include>   
+		<include refid="pagingFooter"></include>
+		           
+	    </select>
+	    
+	    <!-- <select id="listAll" resultType="com.green.board.vo.BoardVo">
+	   	<include refid="pagingHeader"></include>
+		 SELECT   
+			    	TITLE, 
+			        QSEQ,
+			        WRITEDATE,
+			        MENU_ID
+			 		FROM QUEST_BOARD
+			 		WHERE MENU_ID = 'MENU01'
+			<include refid="search"></include>   
+	
+			ORDER BY QSEQ DESC
+		<include refid="pagingFooter"></include>
+		           
+	    </select> -->
+	    
+	    <select id="listAll2" resultType="com.green.board.vo.BoardVo">
+	   	<include refid="pagingHeader"></include>
+		 SELECT
+	        ROW_NUMBER() OVER (ORDER BY Q.NREF  DESC,  Q.STEP  ASC ) AS RN,
+	        DECODE( Q.LVL, 0, ' ', '[답글] ' ) || Q.TITLE AS TITLE,
+					Q.LVL, 
+					Q.QSEQ,
+			        Q.WRITEDATE,
+			        Q.MENU_ID,
+	                Q.CONT,
+			        Q.NREF,
+			        Q.STEP,
+			        Q.QSTATE,
+	                T.NICKNAME,
+	                T.EMAIL,
+	                T.RATE,
+			        Q.BNUM
+			FROM QUEST_BOARD Q, 
+	            TUSERS T  
+	        WHERE T.EMAIL = Q.EMAIL(+)
+	        AND Q.MENU_ID = 'MENU02'    
+			<include refid="search2"></include>   
+		<include refid="pagingFooter"></include>
+		           
+	    </select>
+	    
+	    <!-- 원래꺼 <select id="listAll2" resultType="com.green.board.vo.BoardVo">
+	   	<include refid="pagingHeader"></include> 
+		 SELECT   
+			    	DECODE( LVL, 0, '', '[답글] ' ) || TITLE AS TITLE,
+			    	LVL, 
+			        QSEQ,
+			        WRITEDATE,
+			        MENU_ID,
+			        NREF,
+			        STEP,
+			        BNUM
+			 		FROM QUEST_BOARD  
+			 		WHERE MENU_ID = 'MENU02'
+			<include refid="search2"></include>   
+	
+			ORDER BY  NREF  DESC,  STEP  ASC
+		<include refid="pagingFooter"></include>
+		           
+	    </select> -->
+	    
+	    
+	    
+	    <!-- list 총 갯수 -->
+		<select id="countArticle" resultType="int">
+	   		SELECT COUNT(*) FROM QUEST_BOARD Q, TUSERS T
+	   		WHERE T.EMAIL = Q.EMAIL(+)
+	   		AND Q.MENU_ID = 'MENU01'
+	    		<include refid="search"></include>
+		</select>
+		
+		<!-- list 총 갯수 -->
+		<select id="countArticle2" resultType="int">
+	   		SELECT COUNT(*) FROM QUEST_BOARD Q, TUSERS T
+	   		WHERE T.EMAIL = Q.EMAIL(+)
+	   		AND Q.MENU_ID = 'MENU02'
+	    		<include refid="search2"></include>
+		</select>
+		
+		
+		 <sql id="search">
+			<choose>
+				<when test="searchOption == 'all'">
+					AND ( 
+	           			Q.TITLE LIKE '%'||#{keyword}||'%'
+						OR Q.CONT LIKE '%'||#{keyword}||'%'
+						OR T.EMAIL LIKE '%'||#{keyword}||'%'
+						)
+				</when>
+	
+				<otherwise>
+					AND (${searchOption} LIKE '%'||#{keyword}||'%')
+				</otherwise>
+			</choose>
+		</sql> 
+		
+		<sql id="search2">
+			<choose>
+				<when test="searchOption == 'all'">
+					AND ( 
+	           			Q.TITLE LIKE '%'||#{keyword}||'%'
+						OR Q.CONT LIKE '%'||#{keyword}||'%'
+						OR T.EMAIL LIKE '%'||#{keyword}||'%'
+						)
+	     				
+				</when>
+	
+				<otherwise>
+					AND (${searchOption} LIKE '%'||#{keyword}||'%')
+				</otherwise>
+			</choose>
+		</sql> 
+		
+		<!--원래꺼<sql id="search">
+			<choose>
+				<when test="searchOption == 'all'">
+					AND TITLE LIKE '%'||#{keyword}||'%'
+					OR CONT LIKE '%'||#{keyword}||'%'
+					OR EMAIL LIKE '%'||#{keyword}||'%'
+				</when>
+	
+				<otherwise>
+					AND ${searchOption} LIKE '%'||#{keyword}||'%'
+				</otherwise>
+			</choose>
+		</sql>  -->
+		
+		<!--원래꺼 <sql id="search2">
+			<choose>
+				<when test="searchOption == 'all'">
+					AND TITLE LIKE '%'||#{keyword}||'%'
+					OR CONT LIKE '%'||#{keyword}||'%'
+					OR EMAIL LIKE '%'||#{keyword}||'%'
+				</when>
+	
+				<otherwise>
+					AND ${searchOption} LIKE '%'||#{keyword}||'%'
+				</otherwise>
+			</choose>
+		</sql>  -->
+		
+		<!-- 페이징 sql -->
+		<sql id="pagingHeader">
+			SELECT * FROM(
+				
+			
+		</sql>
+		
+		<sql id="pagingFooter">
+			) A
+	 		WHERE A.rn BETWEEN #{start} AND #{end}
+		</sql>
+	   
+	    <!-- 내용 보기 -->
+	    <select id            = "Board"
+	            parameterType = "hashmap"
+	            resultType    = "com.green.board.vo.BoardVo">
+	      SELECT
+		   Q.TITLE,
+		   Q.CONT,
+		   Q.QSEQ,
+		   Q.WRITEDATE,
+		   T.EMAIL
+		   FROM QUEST_BOARD Q, TUSERS T
+		   WHERE T.EMAIL = Q.EMAIL(+)
+		   AND Q.QSEQ = #{qseq}
+		   
+		   </select>
+		   
+		   <!-- 내용 보기 -->
+	    <select id            = "Board2"
+	            parameterType = "hashmap"
+	            resultType    = "com.green.board.vo.BoardVo">
+	      SELECT
+		   Q.TITLE,
+		   NVL(Q.CONT, ' ') CONT,
+		   Q.QSEQ,
+		   Q.WRITEDATE,
+		   T.EMAIL,
+		   Q.BNUM,
+		   Q.LVL,
+		   Q.STEP,
+		   Q.NREF,
+		   Q.QSTATE
+		   FROM QUEST_BOARD Q, TUSERS T
+		   WHERE T.EMAIL = Q.EMAIL(+)
+		   AND Q.QSEQ = #{qseq}
+	     
+	    </select>
+	    
+	    		   <!-- 내용 보기 -->
+	    <select id            = "Board3"
+	            parameterType = "hashmap"
+	            resultType    = "com.green.board.vo.BoardVo">
+	      SELECT
+		   TITLE,
+		   NVL(CONT, ' ') CONT,
+		   QSEQ,
+		   WRITEDATE,
+		   BNUM,
+		   LVL,
+		   STEP,
+		   NREF
+		   FROM QUEST_BOARD
+		   WHERE NREF = #{nref} AND LVL = 1
+	     
+	    </select>
+	    
+	    <update id="ReadCountUpdate">
+	       UPDATE  QUEST_BOARD
+	        SET    READCOUNT = READCOUNT + 1     
+	        WHERE  QSEQ  = #{qseq}        
+	    </update> 
+	    
+	    <!--  공지 등록 -->
+	    <insert  id="BoardInsert" >
+	    INSERT INTO QUEST_BOARD(
+	    	QSEQ,
+		    TITLE,
+		    CONT,
+		    WRITEDATE,
+		    MENU_ID,
+		    EMAIL
+		    
+		) VALUES (
+		    ( SELECT NVL(MAX(QSEQ),0)+1 FROM QUEST_BOARD) ,
+		    #{title},
+		    #{cont},
+		    SYSDATE,
+		    'MENU01',
+		    'www.admin@admin.com'
+		    
+		    )
+		    
+	    </insert>
+	    
+	    <!--  1:1 문의 작성 -->
+	    <insert  id="BoardInsert2" >
+	    INSERT INTO QUEST_BOARD (
+	    	QSEQ,
+		    TITLE,
+		    CONT,
+		    WRITEDATE,
+		    MENU_ID,
+		    EMAIL,
+		    BNUM,
+		    LVL,
+		    STEP,
+		    NREF
+		) VALUES (
+		    ( SELECT NVL(MAX(QSEQ),0)+1 FROM QUEST_BOARD ) ,
+		    #{title},
+		    #{cont},
+		    SYSDATE,
+		    'MENU02',
+		    #{email},
+		    ( SELECT NVL(MAX(LVL),0)+1 FROM QUEST_BOARD  ) ,
+		    0,
+		    0,
+		    ( SELECT NVL(MAX(QSEQ),0)+1 FROM QUEST_BOARD )
+		    
+		    )
+		    
+	    </insert>
+	    
+	     
+	    
+	    <!-- 해당글(menu_id) 그룹(nref)의 기존 답글의 순서(step)를 +1 증가 -->
+	    <update id="UpdateRef">
+	     UPDATE  QUEST_BOARD
+		     SET    STEP = STEP + 1
+		     WHERE  MENU_ID = 'MENU02' 
+		     AND    NREF    = #{ nref }
+		     AND    STEP    > #{ step }
+	    </update>
+	    
+	    <!-- 답글 쓰기 -->
+	     <insert id="BoardReply">       
+	    INSERT INTO QUEST_BOARD (
+		    QSEQ,
+		    MENU_ID,
+		    TITLE,
+		    CONT,
+		    EMAIL,
+		    WRITEDATE,
+		    BNUM,
+		    LVL,
+		    STEP,
+		    NREF
+		) VALUES (
+		    ( SELECT NVL(MAX(QSEQ),0)+1 FROM QUEST_BOARD ) , 
+		    'MENU02',
+		    #{title},
+		    #{cont},
+		     #{ email  },
+		    SYSDATE,
+		    #{ bnum  },
+		    #{ lvl   } + 1 ,
+		    #{ step  } + 1,
+		    #{ nref  }
+		)
+	    </insert> 
+	    
+	   <!-- 수정하기 -->
+	   <update id="BoardUpdate">
+	      UPDATE   QUEST_BOARD
+	       SET     TITLE = #{ title },
+	               CONT  = #{ cont  }
+	       WHERE   QSEQ   = #{ qseq   }         
+	   </update>
+	   
+	   <!-- 수정하기2 -->
+	   <update id="BoardUpdate2">
+	      UPDATE   QUEST_BOARD
+	       SET     TITLE = #{ title },
+	               CONT  = #{ cont  }
+	       WHERE   QSEQ   = #{ qseq   }         
+	   </update>
+
+	   <!-- 답변 상태 변경 -->
+	   <update id="BoardUpdate3">
+	      UPDATE   QUEST_BOARD
+	       SET     QSTATE = '답변 완료'
+	       WHERE   QSEQ   = #{ qseq   }         
+	   </update>
+	   <!-- 삭제하기 -->
+	   <delete id="BoardDelete">
+	      DELETE  FROM  QUEST_BOARD
+	       WHERE  QSEQ  =  #{ qseq } 
+	   </delete>
+	   
+	   <!-- 삭제하기 -->
+	   <delete id="BoardDelete2">
+	      DELETE  FROM  QUEST_BOARD
+	       WHERE  QSEQ  =  #{ qseq } 
+	   </delete>
+	   
+		      
+	</mapper>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

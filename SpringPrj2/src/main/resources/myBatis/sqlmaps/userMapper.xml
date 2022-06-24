@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="User">
+<select id="login"
+        resultType="com.green.user.vo.UserVo">
+     SELECT EMAIL, 
+            NICKNAME,
+            PASSWD,
+            RATE,
+            TO_CHAR(REGDATE, 'YYYY-MM-DD HH24:MI:SS') REGDATE 
+      FROM  TUSERS
+      WHERE EMAIL  = #{email}
+      AND   PASSWD = #{passwd}    
+    
+    </select>
+   <select id="UserList"
+      resultType="com.green.user.vo.UserVo">
+      SELECT USERID,PASSWD,USERNAME,TO_CHAR(INDATE,'YYYY-MM-DD HH24:MI:SS') INDATE
+       FROM TUSER
+       ORDER BY INDATE DESC
+   </select>  
+   <select id="getView"
+      resultType="com.green.user.vo.UserVo">
+      SELECT USERID,PASSWD,USERNAME,TO_CHAR(INDATE,'YYYY-MM-DD HH24:MI:SS') INDATE 
+      FROM TUSER 
+      WHERE USERID=#{id}
+   </select>  
+   <select id="getTrainInform"
+      resultType="com.green.user.vo.TrainInformVo">
+        SELECT R.DEPART DEPART, R.ARRIVE ARRIVE, TO_CHAR(R.DEP_DATE,'YYYY-MM-DD HH24:MI:SS') DEP_DATE, R.TRAINGRADENAME, R.TRAINNO, S.SEAT_INFORM
+		FROM TRAIN_RESERVS R JOIN TRAIN_SEAT S
+		ON R.TSEQ=S.TSEQ AND R.TRAINNO=S.TRAINNO
+		WHERE DEPART=#{depPlaceId} AND ARRIVE=#{arrPlaceId} 
+		AND TO_DATE(DEP_DATE,'YY/MM/DD')=TO_DATE(#{depPlandTime},'YY/MM/DD')
+   </select>  
+   <select id="getViewName"
+      resultType="com.green.user.vo.UserVo">
+      SELECT USERID,PASSWD,USERNAME,TO_CHAR(INDATE,'YYYY-MM-DD HH24:MI:SS') INDATE 
+      FROM TUSER 
+      WHERE USERNAME LIKE '%' || #{name} || '%'
+   </select>  
+   <insert id="insertReserv">
+	   INSERT INTO TRAIN_RESERVS (
+			    TSEQ,TRAINNO,TRAINGRADENAME,
+			    DEPART,ARRIVE,DEP_DATE,
+			    ARR_DATE,REGDATE,PRICE,
+			    PROMOTION,RESERVSTATE,EMAIL
+			) VALUES (
+			    (SELECT NVL(MAX(TSEQ),0)+1 FROM TRAIN_RESERVS),#{list1trainroom},#{list1traingradename},
+			    #{dep2city},#{arr2city},TO_DATE(#{depdate},'YYYY-MM-DD HH24:MI:SS'),
+			    TO_DATE(#{depdate},'YYYY-MM-DD HH24:MI:SS'),SYSDATE,#{list1adultcharge},
+			    #{list1promotion},'예약 완료',#{email}
+			)   
+   </insert>
+   <insert id="insertReservseat">
+	   INSERT INTO TRAIN_SEAT (
+			    TSEQ,TRAINNO,SEAT_INFORM
+			) VALUES (
+			    (SELECT NVL(MAX(TSEQ),0) FROM TRAIN_RESERVS),#{list1trainroom},#{list1trainseat}
+			)   
+   </insert>
+   <insert id="insertReservRound">
+	   INSERT INTO TRAIN_RESERVS (
+			    TSEQ,TRAINNO,TRAINGRADENAME,
+			    DEPART,ARRIVE,DEP_DATE,
+			    ARR_DATE,REGDATE,PRICE,
+			    PROMOTION,RESERVSTATE,EMAIL
+			) VALUES (
+			    (SELECT NVL(MAX(TSEQ),0)+1 FROM TRAIN_RESERVS),#{list2trainroom},#{list2traingradename},
+			    #{arr2city},#{dep2city},TO_DATE(#{arrdate},'YYYY-MM-DD HH24:MI:SS'),
+			    TO_DATE(#{arrdate},'YYYY-MM-DD HH24:MI:SS'),SYSDATE,#{list2adultcharge},
+			    #{list2promotion},'예약 완료',#{email}
+			)   
+   </insert>
+   <insert id="insertReservseatRound">
+	   INSERT INTO TRAIN_SEAT (
+			    TSEQ,TRAINNO,SEAT_INFORM
+			) VALUES (
+			    (SELECT NVL(MAX(TSEQ),0) FROM TRAIN_RESERVS),#{list2trainroom},#{list2trainseat}
+			)   
+   </insert>
+   <insert id="insertAccomReserv">
+   	INSERT INTO ACCOM_RESERVS (
+   		ASEQ, ACCOM_NAME,ADDRESS, PHONE, PRICE,  EMAIL, CHECKINDATE,RESERVSTATE
+   	) VALUES (
+   		(SELECT NVL(MAX(ASEQ),0)+1 FROM ACCOM_RESERVS),
+   		#{accom_name}, 
+   		#{address},
+		#{phone},
+		#{price},
+		
+		#{email},
+		TO_DATE(#{depdate}	, 'YYYY-MM-DD HH24:MI:SS'),
+		'예약 완료'
+   	)
+   </insert>
+   <insert id="insertAccomReservroom">
+   INSERT INTO ACCOM_ROOM (
+   		ASEQ, ACCOM_NAME, ROOM_NUMBER, ROOM_TYPE, ADULTS, KIDS,CHECKINDATE
+   ) VALUES (
+   (SELECT NVL(MAX(ASEQ),0) FROM ACCOM_RESERVS),
+   	#{accom_name},
+   	#{room},
+   	#{roomtype},
+   	#{adults},
+   	#{kids},
+   	TO_DATE(#{depdate}	, 'YYYY-MM-DD HH24:MI:SS')
+   )
+   </insert>
+       <insert id="submit">
+        INSERT INTO TUSERS(   EMAIL,
+                              NICKNAME,
+                              PASSWD )
+                    VALUES(   #{email}
+                             , #{nickname}
+                             , #{passwd} )                
+    </insert> 
+</mapper>

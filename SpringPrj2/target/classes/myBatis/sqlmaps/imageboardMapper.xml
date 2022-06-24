@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="imageBoard">
+	<select id="countArticleMymap" resultType="int">
+   		SELECT COUNT(*) FROM MYBOARD
+   		WHERE MENU_ID = #{menu_id}
+	</select>    
+    <insert  id="myboardInsert" >
+    INSERT INTO MYBOARD (
+    	BSEQ,
+	    TITLE,
+	    CONT,
+	    WRITEDATE,
+	    MENU_ID,
+	    EMAIL,
+	    READCOUNT,
+	    SUBCATEGORY,
+	    RECOMMEND
+	) VALUES (
+	    ( SELECT NVL(MAX(BSEQ),0)+1 FROM MYBOARD ) ,
+	    #{title},
+	    #{cont},
+	    SYSDATE,
+	    #{menu_id},
+	    #{email},
+	    0,
+	    #{cate},
+	    0	    
+	    )	    
+    </insert>
+    <select id="listAllCommunity" resultType="com.green.imageboard.vo.BoardVo">
+    <include refid="pagingHeader"></include>
+	 SELECT   
+		    	M.TITLE TITLE, 
+		        M.BSEQ CCSEQ,
+		        M.WRITEDATE WRITEDATE,
+		        M.MENU_ID MENU_ID,
+		        B.SFILENAME SFILENAME,
+		        (SELECT COUNT(*) FROM MYBOARD) AS RECNT
+		 		FROM MYBOARD M JOIN BOARD_FILES B
+		 		ON M.BSEQ = B.BSEQ
+		 		WHERE M.MENU_ID = #{menu_id}
+		<include refid="search"></include> 
+
+		ORDER BY WRITEDATE DESC, RECOMMEND DESC 
+	<include refid="pagingFooter"></include>           
+    </select>
+    <select id="listAllCommunitybyrecomm" resultType="com.green.imageboard.vo.BoardVo">
+    <include refid="pagingHeader"></include>
+	 SELECT   
+		    	M.TITLE TITLE, 
+		        M.BSEQ CCSEQ,
+		        M.WRITEDATE WRITEDATE,
+		        M.MENU_ID MENU_ID,
+		        B.SFILENAME SFILENAME,
+		        (SELECT COUNT(*) FROM MYBOARD) AS RECNT
+		 		FROM MYBOARD M JOIN BOARD_FILES B
+		 		ON M.BSEQ = B.BSEQ
+		 		WHERE M.MENU_ID = #{menu_id}
+		<include refid="search"></include> 
+
+		ORDER BY  RECOMMEND DESC, WRITEDATE DESC  
+	<include refid="pagingFooter"></include>           
+    </select>
+    <!-- 페이징 sql -->
+	<sql id="pagingHeader">
+		SELECT * FROM(
+			SELECT ROWNUM AS rn, A.* FROM (
+		
+	</sql>
+	<sql id="pagingFooter">
+		) A
+	) WHERE rn BETWEEN #{start} AND #{end}
+	</sql>
+	<sql id="search">
+		<choose>
+			<when test="searchOption == 'all'">
+				AND TITLE LIKE '%'||#{keyword}||'%'
+				OR CONT LIKE '%'||#{keyword}||'%'
+				OR EMAIL LIKE '%'||#{keyword}||'%'
+			</when>
+
+			<otherwise>
+				AND ${searchOption} LIKE '%'||#{keyword}||'%'
+			</otherwise>
+		</choose>
+	</sql> 
+	    <!-- 내용 보기 -->
+    <select id            = "Board"
+            parameterType = "hashmap"
+            resultType    = "com.green.imageboard.vo.BoardVo">
+      SELECT
+	   M.TITLE TITLE,
+	   M.CONT CONT,
+	   M.BSEQ CCSEQ,
+	   M.WRITEDATE WRITEDATE,
+	   T.NICKNAME NICKNAME,
+	   M.SUBCATEGORY SUBCATEGORY,
+	   M.RECOMMEND RECOMMEND,
+	   M.READCOUNT READCOUNT,
+	   B.SFILENAME SFILENAME,
+	   M.EMAIL EMAIL
+	   
+	   FROM MYBOARD M  JOIN TUSERS T 
+	   ON M.EMAIL=T.EMAIL JOIN BOARD_FILES B
+	   ON M.BSEQ=B.BSEQ
+	   WHERE M.BSEQ = #{bseq}
+	   
+	</select>
+	<update id="ReadCountUpdate">
+       UPDATE  MYBOARD
+        SET    READCOUNT = READCOUNT + 1     
+        WHERE  BSEQ  = #{bseq}        
+    </update> 
+	<update id="updateRecomm">
+       UPDATE  MYBOARD
+        SET    RECOMMEND = RECOMMEND + 1     
+        WHERE  BSEQ  = #{bseq}        
+    </update> 
+  <insert id="FileInsert">
+   		<!-- 글 한개에 여러 파일에 있는 경우도 처리 : INSERT ALL  -->
+   		<!-- 
+   		Board 
+   		  idx 17
+   		Files
+   		  file_num  idx  filename fileext sfilename 
+   		  1         17   a1       
+   		  2         17   a2
+   		  3         17   a3   		  
+   		  -->
+		<foreach collection="filesList" item="file" index="i" open=" INSERT ALL " close=" SELECT * FROM DUAL " 
+		 separator=" ">
+		 	<!-- (SELECT MAX(NVL(IDX,0)+1) FROM FILES) - PK 무결성 제약조건 위배 
+		 		  FILENUM_SEQ.NEXTVAL(시퀀스사용) - PK 무결성 제약조건 위배 
+		 		  함수사용
+		 		  CREATE OR REPLACE FUNCTION GET_FILENUM
+					RETURN NUMBER AS NUM NUMBER;
+					BEGIN
+					    SELECT FILENUM_SEQ.NEXTVAL
+					     INTO NUM
+					     FROM DUAL;
+					     RETURN NUM;
+					END;
+					SELECT GET_FILENUM() FROM DUAL;-->
+		 	INTO BOARD_FILES VALUES(
+		 	GET_FILENUM(),
+		 	(SELECT MAX(BSEQ) FROM MYBOARD),
+		 	#{file.filename},
+		 	#{file.fileext},
+		 	#{file.sfilename})
+		 </foreach>
+   </insert>
+   <!-- 삭제하기 -->
+   <delete id="deleteBoard">
+      DELETE  FROM  MYBOARD
+       WHERE  BSEQ  =  #{ bseq } 
+   </delete>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

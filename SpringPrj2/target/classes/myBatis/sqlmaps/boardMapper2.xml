@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+
+<mapper namespace="Board2">
+
+   <!-- 삭제하기 -->
+   <delete id="BoardDelete">
+      DELETE  FROM  MYBOARD
+       WHERE  BSEQ  =  #{ bseq } 
+   </delete>
+   
+       
+   <!-- 수정하기 -->
+   <update id="BoardUpdate" parameterType = "hashmap" >
+      UPDATE   MYBOARD
+       SET     TITLE = #{ title },
+               CONT  = #{ cont  },
+                SUBCATEGORY = #{ subcategory }
+       WHERE   BSEQ   = #{ bseq}         
+   </update>
+   
+    <!-- 내용 보기 -->
+    <select id  = "Board"  parameterType = "hashmap"    resultType    = "com.green.board2.vo.BoardVo2">
+      SELECT
+	   TITLE,
+	   CONT,
+	   BSEQ,
+	   MENU_ID,
+	   SUBCATEGORY,
+	   MYBOARD.EMAIL AS EMAIL,
+	   WRITEDATE,
+	   RECOMMEND,
+	   NICKNAME
+	   FROM MYBOARD LEFT OUTER JOIN TUSERS ON (MYBOARD.EMAIL=TUSERS.EMAIL)
+	   WHERE BSEQ = #{bseq}
+	   </select>
+	   
+	<!-- 조회수 증가 -->   
+    <update id="ReadCountUpdate">
+       UPDATE  MYBOARD
+        SET    READCOUNT = READCOUNT + 1     
+        WHERE  BSEQ  = #{bseq}        
+    </update> 	
+    
+    	   
+	<!-- 추천수 증가 -->   
+    <update id="RecommendUpdate">
+       UPDATE  MYBOARD
+        SET    RECOMMEND = RECOMMEND + 1     
+        WHERE  BSEQ  = #{bseq}        
+    </update>    
+    
+   	<!--  추천 이메일 저장 -->
+     <insert  id="Recommend" >
+    INSERT INTO RECOMMEND(
+    	BSEQ,
+	    EMAIL
+	) VALUES (
+	    #{bseq},
+	    #{email}
+	    )
+	    
+    </insert> 
+	<!--  글쓰기 -->
+     <insert  id="BoardInsert" >
+    INSERT INTO MYBOARD(
+    	BSEQ,
+	    TITLE,
+	    CONT,
+	    EMAIL,
+	    SUBCATEGORY,
+	    WRITEDATE,
+	    MENU_ID
+	) VALUES (
+	    ( SELECT NVL(MAX(BSEQ),0)+1 FROM MYBOARD ) ,
+	    #{title},
+	    #{cont},
+	    #{email},
+	    #{subcategory},
+	    SYSDATE,
+	    #{menu_id}
+	    
+	    )
+	    
+    </insert>
+
+	
+    <!-- list 총 갯수 -->
+	<select id="countArticle" resultType="int">
+   		SELECT COUNT(*) FROM MYBOARD
+   		WHERE MENU_ID = #{menu_id}
+    		<include refid="search"></include>		
+    		<include refid="search2"></include>   
+    		
+	</select>
+     
+
+	<!-- 글 목록 -->
+	 <select id="listAll" resultType="com.green.board2.vo.BoardVo2">
+   	<include refid="pagingHeader"></include>
+	 SELECT   
+	            BSEQ,
+		    	TITLE, 
+		        MENU_ID,
+		        RECOMMEND,
+		        READCOUNT,
+		        MYBOARD.EMAIL AS EMAIL,
+		        SUBCATEGORY,
+		        NICKNAME,
+		        (SELECT COUNT(*) FROM MYBOARD) AS RECNT
+				FROM MYBOARD LEFT OUTER JOIN TUSERS ON (MYBOARD.EMAIL=TUSERS.EMAIL)
+		 		WHERE MENU_ID = #{menu_id}
+		<include refid="search"></include>   
+		<include refid="search2"></include>   
+
+		ORDER BY BSEQ DESC
+	<include refid="pagingFooter"></include>
+	           
+    </select>
+ 	<!-- 추천수 상위 3개 -->   
+  <select id="listAll2" resultType="com.green.board2.vo.BoardVo2">
+  
+   	SELECT * 
+   	FROM ( SELECT
+	            BSEQ,
+		    	TITLE, 
+		        MENU_ID,
+		        READCOUNT,
+		        MYBOARD.EMAIL AS EMAIL,
+		        SUBCATEGORY,
+		        NICKNAME,
+		        RECOMMEND,
+		        ROW_NUMBER() OVER(ORDER BY RECOMMEND DESC) AS RNK
+				FROM MYBOARD LEFT OUTER JOIN TUSERS ON (MYBOARD.EMAIL=TUSERS.EMAIL)
+		 		WHERE MENU_ID = #{menu_id}
+		            <include refid="search"></include>   ) 
+	        WHERE RNK BETWEEN 1 AND 3 
+		                     
+    </select>
+    
+    <!-- 추천 이메일 목록 -->
+      <select id="recList" resultType="com.green.board2.vo.RecommendVo" parameterType = "hashmap" >
+  
+   SELECT       BSEQ,
+		    	EMAIL
+				FROM RECOMMEND
+		 		WHERE BSEQ = #{bseq}
+
+	           
+    </select>
+    
+    
+    
+    
+    
+     <!-- 버튼 sql-->
+     <sql id="search">
+		<choose>
+			<when test="subcate == 'SEOUL'">
+			 AND SUBCATEGORY = 'SEOUL'
+			</when>
+			<when test="subcate == 'BUSAN'">
+			 AND SUBCATEGORY = 'BUSAN'
+			</when>
+			<when test="subcate == 'JEJU'">
+			 AND SUBCATEGORY = 'JEJU'
+			</when>
+			<when test="subcate == 'ETC'">
+			 AND SUBCATEGORY NOT IN ('SEOUL', 'BUSAN', 'JEJU')
+			</when>
+			<when test="subcate == 'PLAY'">
+			 AND SUBCATEGORY = 'PLAY'
+			</when>
+			<when test="subcate == 'SLEEP'">
+			 AND SUBCATEGORY = 'SLEEP'
+			</when>
+			<when test="subcate == 'FOOD'">
+			 AND SUBCATEGORY = 'FOOD'
+			</when>
+			<when test="subcate == 'ETC2'">
+			 AND SUBCATEGORY NOT IN ('PLAY', 'SLEEP', 'FOOD')
+			</when>
+			<when test="subcate == 'HUMOR'">
+			 AND SUBCATEGORY = 'HUMOR'
+			</when>
+			<when test="subcate == 'INFORM'">
+			 AND SUBCATEGORY = 'INFORM'
+			</when>
+			<when test="subcate == 'WITH'">
+			 AND SUBCATEGORY = 'WITH'
+			</when>
+			<when test="subcate == 'ETC3'">
+			 AND SUBCATEGORY NOT IN ('HUMOR', 'INFORM', 'WITH')
+			</when>
+			
+			
+
+			<otherwise>
+			
+			</otherwise>
+		</choose>
+	</sql> 
+	
+    <sql id="search2">
+		<choose>
+			<when test="searchOption == 'all'">
+				AND TITLE LIKE '%'||#{keyword}||'%'
+				OR CONT LIKE '%'||#{keyword}||'%'
+			</when>
+
+			<otherwise>
+				AND ${searchOption} LIKE '%'||#{keyword}||'%'
+			</otherwise>
+		</choose>
+	</sql> 
+	<!-- 페이징 sql -->
+	<sql id="pagingHeader">
+		SELECT * FROM(
+			SELECT ROWNUM AS rn,
+			       A.* FROM (
+		
+	</sql>
+	
+	<sql id="pagingFooter">
+		) A
+	) WHERE rn BETWEEN #{start} AND #{end}
+	</sql>
+	      
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

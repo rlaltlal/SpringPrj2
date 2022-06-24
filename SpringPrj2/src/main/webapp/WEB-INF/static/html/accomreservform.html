@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<script>
+	$(function(){
+	
+	//숙박지 조회 버튼 클릭시 정보 출력
+			$('#btnAccom').on('click',function () {
+				let str=$('#sel2 option:selected').val().split(',');
+				alert(str[1]);
+				$.ajax({
+					url:'/RestBoard/accom',
+					data:{serviceKey:'tvfqSK3YoFSu5zUxFlRXzHPZy9sScorrRktSoMvbTcl7tUkGqTkXWdF%2Ft2HrV6I7jwwLl2ugEEob0gMnq%2BTXBw%3D%3D',
+						  numOfRows:'10',
+			              pageNo:'1',
+			              MobileOs:'ETC',
+			              MobileApp:'AppTest',
+			              arrange:'A',
+	              		  listYN:'Y',
+						  areaCode:str[1]
+	        },
+					method:'POST'
+				}).done(function (data) {
+					console.log(data);
+					let html='';
+					html+='<table id="list1">					';
+					html+='	<tr>';
+					html+='		<th>이름</th>';
+					html+='		<th>사진</th>';
+					html+='		<th>주소</th>';
+					html+='		<th>전화번호</th>';
+					html+='		<th>가격</th>';
+					html+='		<th>선택하기</th>';
+					
+					html+='	</tr>';
+					$(data).find('item').each(function (index,item) {
+						
+						
+						
+						html+='	<tr>';
+						html+='		<td>'+$(item).find('title').html()+'</td>';
+						let imgsrc=$(item).find('firstimage');
+						if(imgsrc.length){
+							html+='		<td>'+'<img src="'+$(item).find('firstimage').html()+'" alt="" style="width:50px;height:50px">'+'</td>'
+						}
+						else{
+							html+='		<td>사진정보 없음</td>';
+						}
+						html+='		<td>'+$(item).find('addr1').html()+'</td>';
+						let tel=$(item).find('tel');
+						if(tel.length){
+							html+='		<td>'+$(item).find('tel').html()+'</td>';
+						}
+						else{
+							html+='		<td>전화정보 없음</td>';
+						}
+						html+='		<td>?</td>';
+						html+='	</tr>';
+					})
+					html+='</table>';
+					$('#div1').html(html);
+				})
+				.fail(function (error,textStatus,errorThrown) {
+					console.log(error);
+					alert('Error :'+error)
+				})
+	
+			})
+	})
+</script>
+</head>
+<body>
+<button id="btnAccom">숙박 버튼</button>
+		
+</body>
+</html>

@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Mypage">
+
+	<!--  예약 완료수(등급) 계산 -->
+    <select id="RateCal" resultType ="int">   
+
+         SELECT COUNT(*) AS COUNT
+                          FROM ( SELECT EMAIL, RESERVSTATE
+                                 FROM ACCOM_RESERVS 
+                                 UNION ALL
+                                 SELECT EMAIL, RESERVSTATE FROM TRAIN_RESERVS  ) T
+                          WHERE RESERVSTATE='예약 완료' AND EMAIL=#{email} GROUP BY EMAIL
+                          
+        UNION ALL
+        SELECT NVL(NULL,0) AS COUNT
+        FROM DUAL
+        WHERE NOT EXISTS (         SELECT email, COUNT(*) AS COUNT
+                          FROM ( SELECT EMAIL, RESERVSTATE
+                                 FROM ACCOM_RESERVS 
+                                 UNION ALL
+                                 SELECT EMAIL, RESERVSTATE FROM TRAIN_RESERVS  ) T
+                          WHERE RESERVSTATE='예약 완료' AND EMAIL=#{email} GROUP BY EMAIL)
+    </select>
+
+
+	    <!--  등급 수정 -->
+    <update id="RateUpdate" parameterType="hashmap">
+      UPDATE  TUSERS
+       SET    RATE = #{ rate }
+       WHERE  EMAIL   = #{ email }        
+    </update> 
+
+	<!--  등급 조회 -->
+    <select id="Rate" resultType="com.green.mypage.vo.UserVo" >   
+      SELECT  RATE
+	  FROM    TUSERS
+      WHERE   EMAIL = #{email}	  
+    </select>
+    
+    <!-- 회원 목록 조회 -->
+    <select id="UserList" resultType="com.green.mypage.vo.UserVo" >   
+      SELECT  EMAIL, NICKNAME, RATE, REGDATE
+	  FROM    TUSERS
+    </select>
+    
+        <!-- 회원 목록 조회 -->
+    <select id="UserEmail" >   
+      SELECT  EMAIL
+	  FROM    TUSERS
+    </select>
+
+	<!--  예약 조회 -->
+    <select id="AccomReservList" resultType="com.green.mypage.vo.MypageVo" >   
+      SELECT  ASEQ, TO_CHAR(CHECKINDATE, 'YYYY-MM-DD') USEDATE, TO_CHAR(CHECKINDATE, 'HH24:MI:SS') USETIME,
+              ACCOM_NAME RESERVCONT, RESERVSTATE
+	  FROM    ACCOM_RESERVS
+      WHERE   EMAIL = #{email}	  
+      ORDER  BY  CHECKINDATE  
+    </select>
+    
+    <select id="TrainReservList" resultType="com.green.mypage.vo.MypageVo" >
+      SELECT  TSEQ, TO_CHAR(DEP_DATE, 'YYYY-MM-DD') USEDATE, TO_CHAR(DEP_DATE, 'HH24:MI:SS') USETIME,
+              TRAINGRADENAME RESERVCONT, RESERVSTATE
+	  FROM    TRAIN_RESERVS 
+      WHERE   EMAIL = #{email}	
+      ORDER  BY  DEP_DATE  
+    </select>
+    
+    <!--  이용날짜 조회 -->
+    <select id="ReservDateList" resultType="com.green.mypage.vo.MypageVo" parameterType="hashmap"> 
+    SELECT DISTINCT USEDATE 
+    FROM (
+      SELECT TO_CHAR(CHECKINDATE, 'YYYY-MM-DD') USEDATE
+      FROM   ACCOM_RESERVS
+      WHERE  EMAIL = #{email} 
+      union  
+      SELECT TO_CHAR(DEP_DATE, 'YYYY-MM-DD') USEDATE
+      FROM   TRAIN_RESERVS
+      WHERE  EMAIL = #{email} )
+
+    </select>   
+    
+
+    
+
+	<!--  예약 상세 조회 -->    
+    <select id="ReservCont" resultType="com.green.mypage.vo.MypageVo" parameterType="hashmap">
+    <if test='tseq == "0"'>
+     SELECT  ASEQ, CHECKINDATE USEDATE, ACCOM_NAME RESERVCONT, EMAIL,
+              ACCOM_NAME ACCOMNAME,
+              ADDRESS,
+              PHONE,
+             PRICE, RESERVSTATE
+	  FROM   ACCOM_RESERVS
+      WHERE  EMAIL = #{email}  and ASEQ=#{aseq} 
+    </if> 
+    <if test='aseq == "0"'>    
+      SELECT  TSEQ, DEP_DATE USEDATE, TRAINGRADENAME RESERVCONT, EMAIL,
+              TRAINGRADENAME || ' ' || TRAINNO AS TRAIN, 
+              DEPART || '->' || ARRIVE  AS TRAINAREA,
+              DEP_DATE || '->' || ARR_DATE TRAINTIME,
+              PRICE, RESERVSTATE
+	  FROM    TRAIN_RESERVS 
+      WHERE   EMAIL = #{email} and TSEQ=#{tseq} 
+	</if>
+    </select>
+    
+    <!--  취소 상세 조회 -->    
+    <select id="CancelCont" resultType="com.green.mypage.vo.MypageVo" parameterType="hashmap">
+    <if test='tseq == "0"'>
+     SELECT  ASEQ, ACCOM_NAME RESERVCONT, TO_CHAR(CHECKINDATE, 'YYYY-MM-DD') USEDATE, PRICE, RESERVSTATE, 
+      ACCOM_NAME || ' / ' || ADDRESS || ' / ' || PHONE  AS RESERVDETAIL
+	  FROM   ACCOM_RESERVS
+      WHERE  EMAIL = #{email}  and ASEQ=#{aseq} and ACCOM_NAME= #{reservcont}   
+    </if> 
+    <if test='aseq == "0"'>    
+      SELECT  TSEQ, TRAINGRADENAME RESERVCONT, TO_CHAR(DEP_DATE, 'YYYY-MM-DD') USEDATE, PRICE, RESERVSTATE, 
+              TRAINNO || ' ' || TRAINGRADENAME || ' / ' || DEPART || '->' || ARRIVE || ' / ' || DEP_DATE || '->' || ARR_DATE
+              AS RESERVDETAIL
+	  FROM    TRAIN_RESERVS 
+      WHERE   EMAIL = #{email} and TSEQ=#{tseq} and TRAINGRADENAME=#{reservcont}
+	</if>
+    </select>
+
+
+	<!--  예약 취소 -->
+   <update id="ReservCancel" parameterType="hashmap">
+   <if test='tseq == "0"'>
+       UPDATE  ACCOM_RESERVS
+       SET     RESERVSTATE = '예약 취소'
+       WHERE   EMAIL = #{email}  and  ASEQ=#{aseq} 
+    </if> 
+    <if test='aseq == "0"'>    
+       UPDATE  TRAIN_RESERVS 
+       SET     RESERVSTATE = '예약 취소'
+       WHERE   EMAIL = #{email}  and  TSEQ=#{tseq} 
+    </if> 
+       
+   </update>
+   
+    <!--  내 글 조회 -->   
+    <select id="PostList"		resultType="com.green.mypage.vo.MypostVo"  parameterType="hashmap">
+  <![CDATA[
+ SELECT SUBCATEGORY, TITLE, BSEQ
+ FROM   (
+      SELECT   ROWNUM RN, SUBCATEGORY, TITLE, BSEQ
+      FROM MYBOARD 
+      WHERE EMAIL = #{email} AND ROWNUM <= #{pageNum} * #{amount} 
+      ORDER BY BSEQ DESC
+      )
+      WHERE RN >(#{pageNum} -1) * #{amount}  
+  ]]>
+	</select>
+	
+	
+	
+	<!--  전체 글 수 조회 -->
+    <select id="GetTotalCount" resultType ="int" >
+    select count(*) from MYBOARD WHERE EMAIL = #{email}  and BSEQ > 0
+    </select>
+    
+		
+    
+    
+   <!--내  게시글 삭제하기 -->
+   <delete id="PostDelete">
+      DELETE  FROM  MYBOARD
+       WHERE  BSEQ  =  #{ bseq }
+   </delete>
+   
+      <!--내 문의글 삭제하기 -->
+   <delete id="QuestDelete">
+      DELETE  FROM  QUEST_BOARD
+       WHERE  QSEQ  =  #{ qseq }
+   </delete>
+         
+         
+         
+    <!--  내 문의글 목록 조회 -->
+    <select id="QuestList" resultType="com.green.mypage.vo.MyquestVo" > 
+      SELECT * 
+      FROM ( SELECT
+              TITLE, QSTATE, QSEQ, EMAIL, NREF,
+              ROW_NUMBER() OVER(ORDER BY WRITEDATE DESC) AS RNK
+      FROM   QUEST_BOARD
+      WHERE  EMAIL = #{email} AND LVL = 0) T
+      WHERE RNK BETWEEN 1 AND 3
+    </select>  
+      
+      
+    <!--  내 정보 조회 -->
+    <select id="MyInform" resultType="com.green.mypage.vo.MyinformVo" > 
+      SELECT EMAIL, NICKNAME, RATE
+      FROM   TUSERS
+      WHERE  EMAIL = #{email}
+    </select>        
+    
+    <!--  내 정보 수정 -->
+    <update id="InformUpdate">
+      UPDATE  TUSERS
+       SET    NICKNAME = #{ nickname },
+              PASSWD  = #{ passwd  }
+       WHERE  EMAIL   = #{ email   }        
+    </update>      
+      
+    <!--  이용날짜 조회 -->
+    <select id="ADateList" resultType="com.green.mypage.vo.MypageVo" parameterType="hashmap"> 
+      SELECT TO_CHAR(CHECKINDATE, 'YYYY-MM-DD') USEDATE,
+             TO_CHAR(CHECKINDATE, 'PM HH:MI:SS') USETIME
+      FROM   ACCOM_RESERVS
+      WHERE  EMAIL = #{email} AND RESERVSTATE = '예약 완료'
+      ORDER  BY  CHECKINDATE
+    </select>   
+    
+     <select id="TDateList" resultType="com.green.mypage.vo.MypageVo" parameterType="hashmap"> 
+      SELECT TO_CHAR(DEP_DATE, 'YYYY-MM-DD') USEDATE,
+             TO_CHAR(DEP_DATE, 'PM HH:MI:SS') USETIME
+      FROM   TRAIN_RESERVS
+      WHERE  EMAIL = #{email} AND RESERVSTATE = '예약 완료'
+      ORDER  BY  DEP_DATE
+    </select>  
+    
+    <!--  이용내역 조회 -->
+    <select id="ALogList" resultType="com.green.mypage.vo.MypageVo" parameterType="hashmap"> 
+      SELECT ASEQ, TO_CHAR(CHECKINDATE, 'YYYY-MM-DD') USEDATE,
+             TO_CHAR(CHECKINDATE, 'HH24:MI') USETIME,
+              ACCOM_NAME ACCOMNAME,
+              ADDRESS,
+              PHONE
+      FROM   ACCOM_RESERVS
+      WHERE  EMAIL = #{email} AND RESERVSTATE = '예약 완료' AND TO_CHAR(CHECKINDATE, 'YYYYMMDD') = #{ usedate }
+      ORDER  BY  CHECKINDATE
+    </select>   
+    
+     <select id="TLogList" resultType="com.green.mypage.vo.MypageVo" parameterType="hashmap"> 
+      SELECT TSEQ, TO_CHAR(DEP_DATE, 'YYYY-MM-DD') USEDATE,
+             TO_CHAR(DEP_DATE, 'HH24:MI') USETIME, 
+             TRAINGRADENAME || ' ' || TRAINNO AS TRAIN, 
+             DEPART || '->' || ARRIVE  AS TRAINAREA,
+             DEP_DATE || '->' || ARR_DATE TRAINTIME
+      FROM   TRAIN_RESERVS
+      WHERE  EMAIL = #{email} AND RESERVSTATE = '예약 완료' AND TO_CHAR(DEP_DATE, 'YYYYMMDD') = #{ usedate } 
+      ORDER  BY  DEP_DATE
+    </select>  
+      
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

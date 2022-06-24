@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+	$(function () {
+		$('#btnGetData').on('click',function () {
+			alert('click');
+			$.ajax({
+				url:'/ajaxlist2',
+				data:'{id:1}',
+				method:'POST'
+			}).done(function (datalist) {
+				console.log(datalist);
+				let html='';
+				//javascript
+				 html+='javascript--------';
+				 datalist.data.forEach(function (item,index) {
+				 	html+='<ul>					';	
+				 	html+='	<li>아이디:'+item.userid+'</li>';
+				 	html+='	<li>이름:'+item.username+'</li>';
+				 	html+='	<li>비밀번호:'+item.passwd+'</li>';
+				 	html+='	<li>가입일'+item.indate+'</li>';
+				 	html+='</ul>';					
+				 })
+								
+				
+				//jquery
+				html+='jquery----------'
+				// json형식 : "key":[{"key":"data"}, ... ]
+				$.each(datalist.data,function (index,item) {
+					html+='<ul>					';	
+					html+='	<li>아이디:'+item.userid+'</li>';
+					html+='	<li>이름:'+item.username+'</li>';
+					html+='	<li>비밀번호:'+item.passwd+'</li>';
+					html+='	<li>가입일'+item.indate+'</li>';
+					html+='</ul>';					
+				})
+				$('#div1').append(html);
+			})
+			.fail(function (error) {
+				console.log(error);
+				alert(error);
+			})
+		})
+	})
+</script>
+</head>
+<body>
+	<button id="btnGetData">btnGetData</button>
+	<div id="div1"></div>
+
+</body>
+</html>

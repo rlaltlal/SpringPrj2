@@ -1,0 +1,29 @@
+@charset "UTF-8";
+
+*{box-sizing: border-box;
+padding: 0; margin: 0;
+}
+
+a{text-decoration: none; color: black;}
+a:hover{text-decoration: underline; color: black;}
+
+table,th,td{border: 1px solid #c0c0c0;
+border-collapse: collapse;
+}
+td,th{padding: 10px;}
+#main{width: 80%; margin: 0;  margin:0 auto;}
+table{width: 100%;}
+#menu{ margin-top: 20px;}
+#menu td{text-align:center; padding: 0;}
+.left{text-align: left;}
+.center{text-align: center;}
+.right{text-align: right;}
+h2{margin: 20px;}
+#menu td:hover{background-color: yellow;}
+#menu td a{
+    /* a disaplay: inline */
+    display: block;
+    width: 100%;
+    padding:10px;
+}
+input{height: 32px;}

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Pds">
+    <insert id="PdsInsert">
+   		INSERT INTO board ( idx, menu_id, title, cont, writter, regdate, readcount, bnum, lvl, step, nref) 
+   		VALUES ( (SELECT NVL(MAX(IDX),0)+1 FROM BOARD), #{menu_id}, #{title}, #{cont}, #{writter}, 
+   		SYSDATE, 0, 
+   		(SELECT NVL(MAX(IDX),0)+1 FROM BOARD),
+   		
+   		 0, 0, (SELECT NVL(MAX(IDX),0)+1 FROM BOARD))
+   </insert>
+   <update id="UpdateRef">
+   		UPDATE BOARD SET STEP=STEP+1 WHERE MENU_ID=#{menu_id} AND NREF=#{nref} AND STEP>#{step}  		
+   </update>
+   <insert id="PdsReply">
+		<!-- update ref 수행-->
+		INSERT INTO board ( idx, menu_id, title, cont, writter, regdate, readcount, bnum, lvl, step, nref) 
+   		VALUES ( (SELECT NVL(MAX(IDX),0)+1 FROM BOARD), #{menu_id}, #{title}, #{cont}, #{writter}, 
+   		SYSDATE, 0, #{bnum}, #{lvl}+1, #{step}+1, #{nref})
+   </insert>
+   <insert id="FileInsert">
+   		<!-- 글 한개에 여러 파일에 있는 경우도 처리 : INSERT ALL  -->
+   		<!-- 
+   		Board 
+   		  idx 17
+   		Files
+   		  file_num  idx  filename fileext sfilename 
+   		  1         17   a1       
+   		  2         17   a2
+   		  3         17   a3   		  
+   		  -->
+		<foreach collection="filesList" item="file" index="i" open=" INSERT ALL " close=" SELECT * FROM DUAL " 
+		 separator=" ">
+		 	<!-- (SELECT MAX(NVL(IDX,0)+1) FROM FILES) - PK 무결성 제약조건 위배 
+		 		  FILENUM_SEQ.NEXTVAL(시퀀스사용) - PK 무결성 제약조건 위배 
+		 		  함수사용
+		 		  CREATE OR REPLACE FUNCTION GET_FILENUM
+					RETURN NUMBER AS NUM NUMBER;
+					BEGIN
+					    SELECT FILENUM_SEQ.NEXTVAL
+					     INTO NUM
+					     FROM DUAL;
+					     RETURN NUM;
+					END;
+					SELECT GET_FILENUM() FROM DUAL;-->
+		 	INTO FILES VALUES(
+		 	GET_FILENUM(),
+		 	(SELECT MAX(IDX) FROM BOARD),
+		 	#{file.filename},
+		 	#{file.fileext},
+		 	#{file.sfilename})
+		 </foreach>
+   </insert>
+   <insert id="FileInsertIntoIdx">
+		<foreach collection="filesList" item="file" index="i" open=" INSERT ALL " close=" SELECT * FROM DUAL " 
+		 separator=" ">
+		 	INTO FILES VALUES(
+		 	GET_FILENUM(),
+		 	${idx},
+		 	#{file.filename},
+		 	#{file.fileext},
+		 	#{file.sfilename})
+		 </foreach>
+   </insert>
+   <select id="PdsList" parameterType="HashMap" resultType="com.green.pds.vo.PdsVo">
+   		SELECT IDX, MENU_ID,
+   		TITLE, WRITTER, READCOUNT, 
+   		(SELECT COUNT(FILE_NUM) FROM FILES F WHERE B.IDX=F.IDX) FILESCOUNT, 
+   		TO_CHAR(REGDATE,'YYYY-MM-DD HH24:MI.SS') REGDATE,
+   		BNUM,LVL,STEP,NREF
+   		FROM BOARD B
+   		<if test="menu_id!=null and menu_id!=''">
+   		WHERE MENU_ID=#{menu_id}
+   		</if>
+   		ORDER BY NREF DESC, STEP ASC
+   
+   </select>
+   <select id="GetPds" parameterType="HashMap" resultType="com.green.pds.vo.PdsVo">
+   		SELECT IDX,MENU_ID,TITLE,CONT,WRITTER,READCOUNT,
+   			TO_CHAR(REGDATE,'YYYY-MM-DD HH24:MI:SS') REGDATE,
+   			BNUM,LVL,STEP,NREF
+   		FROM BOARD
+   		WHERE IDX=#{idx}
+   </select>
+   <select id="PdsFileList" parameterType="HashMap" resultType="com.green.pds.vo.FilesVo">
+   		SELECT 
+			FILE_NUM  ,
+			IDX       ,
+			FILENAME  ,
+			FILEEXT   ,
+			SFILENAME 
+   		FROM FILES
+   		WHERE IDX=#{idx}
+   		ORDER BY FILE_NUM ASC
+   </select>
+   <update id="UpdateReadcount">
+		UPDATE BOARD SET READCOUNT=READCOUNT+1
+		WHERE IDX=#{idx}
+		   		
+   </update>
+   <delete id="DeletePds">
+	   DELETE FROM BOARD WHERE IDX=#{idx}
+   </delete>
+   <delete id="DeleteFiles">
+	   DELETE FROM FILES WHERE IDX=#{idx}
+   </delete>
+   <update id="UpdatePds">
+		UPDATE BOARD SET TITLE=#{title}, CONT=#{cont}
+		WHERE IDX=#{idx}
+   </update>
+   <delete id="deleteUploadedFile">
+		DELETE FROM FILES WHERE FILE_NUM=#{file_num}
+   </delete>
+   
+</mapper>
