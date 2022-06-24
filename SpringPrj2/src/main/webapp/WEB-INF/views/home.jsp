@@ -6,7 +6,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Insert title here</title>
+<title>Github test<title>
 <style>
     #bannerdiv{width: 100%;padding-bottom: 10px;}
     #bannerimg{width: 100%;height: 300px;}
