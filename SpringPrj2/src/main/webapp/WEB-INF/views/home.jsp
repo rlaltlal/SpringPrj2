@@ -105,7 +105,7 @@ function tableCreate(i){
         <img src="/img/banner2.png" alt="" id="bannerimg">
     </div>
     <div id="main">
-        <b id="title" style="padding-bottom: 10px; font-size: 20px;">유저 추천 여행 코스</b><br>
+        <b id="title" style="padding-bottom: 10px; font-size: 20px;">            유저 추천 여행 코스</b><br>
         <div id="maintable">
             <div id="maintableheader">
                 <div id = "buttons">
